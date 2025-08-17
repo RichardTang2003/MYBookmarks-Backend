@@ -8,7 +8,26 @@ const swaggerUi = require('swagger-ui-express');
 const PORT = process.env.PORT || 3001; // 设置服务器端口
 const DB_FILE = process.env.DB_FILE || 'bookmarks.db'; // 数据库文件名
 
-app.use(cors()); // 允许跨域请求
+// 允许跨域请求：支持从环境变量配置允许的来源并支持凭证（cookies/Authorization header）
+const allowedOriginsEnv = process.env.CORS_ALLOWED_ORIGINS || '';
+const allowedOrigins = allowedOriginsEnv.split(',').map(s => s.trim()).filter(Boolean);
+
+if (allowedOrigins.length > 0) {
+    // allow only listed origins and echo origin to support credentials
+    app.use(cors({
+        origin: function(origin, cb) {
+            // allow non-browser requests with no origin (curl, server-to-server)
+            if (!origin) return cb(null, true);
+            if (allowedOrigins.indexOf(origin) !== -1) return cb(null, true);
+            return cb(new Error('Not allowed by CORS'));
+        },
+        credentials: true,
+        methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS']
+    }));
+} else {
+    // no explicit list -> allow any origin; echo origin for credentials support
+    app.use(cors({ origin: true, credentials: true }));
+}
 app.use(express.json()); // 解析JSON格式的请求体
 
 // Swagger (OpenAPI) setup
@@ -21,7 +40,7 @@ const swaggerOptions = {
             description: 'API for MYBookmarks backend'
         },
         servers: [
-            { url: 'http://localhost:' + PORT }
+            { url: process.env.SWAGGER_BASE_URL || '/' }
         ],
         components: {
             schemas: {
@@ -385,8 +404,47 @@ app.delete('/v0/bookmarks/:id', auth.authenticate, async (req, res) => {
 });
 
 /**
- * @route POST /v0/register
- * @desc 注册新用户
+ * @openapi
+ * /v0/register:
+ *   post:
+ *     summary: Register a new user
+ *     description: 创建一个新用户。注册功能可通过环境变量 `REGISTRATION_ENABLED` 关闭。
+ *     tags:
+ *       - users
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, password]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: alice
+ *               password:
+ *                 type: string
+ *                 example: strong-password
+ *     responses:
+ *       201:
+ *         description: Created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   example: 1
+ *                 username:
+ *                   type: string
+ *                   example: alice
+ *       400:
+ *         $ref: '#/components/responses/InvalidInput'
+ *       403:
+ *         $ref: '#/components/responses/RegistrationDisabled'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 app.post('/v0/register', async (req, res) => {
     const { username, password } = req.body;
@@ -401,8 +459,44 @@ app.post('/v0/register', async (req, res) => {
 });
 
 /**
- * @route POST /v0/login
- * @desc 登录并返回 JWT
+ * @openapi
+ * /v0/login:
+ *   post:
+ *     summary: Login and receive a JWT
+ *     description: Authenticate a user and return a JWT token for subsequent requests.
+ *     tags:
+ *       - users
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, password]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: alice
+ *               password:
+ *                 type: string
+ *                 example: strong-password
+ *     responses:
+ *       200:
+ *         description: Authentication successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   description: JWT token
+ *       400:
+ *         $ref: '#/components/responses/InvalidInput'
+ *       401:
+ *         $ref: '#/components/responses/AuthFailed'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
  */
 app.post('/v0/login', async (req, res) => {
     const { username, password } = req.body;
