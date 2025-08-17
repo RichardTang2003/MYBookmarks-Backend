@@ -1,0 +1,38 @@
+{
+  "name": "mybookmarks-backend",
+  "version": "0.1.0",
+  "description": "Backend for MYBookmarks",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+  "test": "mocha \"tests/**/*.js\" --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RichardTang2003/MYBookmarks-Backend.git"
+  },
+  "author": "RichardTang2003",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+  "cors": "^2.8.5",
+  "swagger-jsdoc": "^6.2.8",
+  "swagger-ui-express": "^4.6.3",
+  "mysql2": "^3.3.0",
+  "knex": "^2.5.1",
+  "dotenv": "^16.3.1",
+  "bcryptjs": "^2.4.3",
+  "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "mocha": "^10.2.0",
+    "chai": "^4.3.8",
+    "supertest": "^6.3.3"
+  }
+}
